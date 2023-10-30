@@ -63,17 +63,17 @@ app.get('/getTableData', (req, res) => {
 });
 
 app.patch('/alterarStatus', (req, res) => {
-  const { nome } = req.query;
+  const { id } = req.query;
 
-  const processo = 'SELECT * FROM processo WHERE nome = ?';
-  executeQuery(processo, [nome])
+  const processo = 'SELECT * FROM processo WHERE id = ?';
+  executeQuery(processo, [id])
     .then((results) => {
       const status = unconvertStatus(results[0].status);
       const novoStatus = !status;
 
-      const sql = 'UPDATE processo SET status = ? WHERE nome = ?';
+      const sql = 'UPDATE processo SET status = ? WHERE id = ?';
 
-      executeQuery(sql, [novoStatus, nome])
+      executeQuery(sql, [novoStatus, id])
         .then(() => {
           res.json({ message: 'Status alterado com sucesso!' });
         })
