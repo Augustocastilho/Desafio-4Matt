@@ -2,9 +2,15 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const mysql = require('mysql2');
+const { format } = require('date-fns');
+const basicAuth = require("basic-auth");
+const dotenv = require("dotenv"); 
+const axios = require("axios");
+
 
 app.use(cors());
 app.use(express.json());
+dotenv.config();
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -75,6 +81,10 @@ app.patch('/alterarStatus', (req, res) => {
 
       executeQuery(sql, [novoStatus, id])
         .then(() => {
+          if (!novoStatus) {
+            console.log(novoStatus);
+            servicenow(processo);
+          }
           res.json({ message: 'Status alterado com sucesso!' });
         })
         .catch(() => {
@@ -85,5 +95,36 @@ app.patch('/alterarStatus', (req, res) => {
       res.json({ message: 'Erro ao alterar status!' });
     });
 });
+
+
+async function servicenow (processo) {
+  const dataHoraAtual = new Date();
+  const date = format(dataHoraAtual, 'dd/MM/yyyy HH:mm:ss');
+  const config = {
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${process.env.AUTH_USERNAME}:${process.env.AUTH_PASSWORD}`).toString('base64'),
+        'Content-Type': 'application/json'
+      }
+  };
+
+  const callerId = "31dedd3a1b42f1d034255311604bcb70";
+
+  const data = { 
+      callerId, 
+      short_description: "UFJF - Grupo 1 - (Lucas e Augusto) - Incidente hackaton", 
+      description: `incidente criado automático - ${processo.nome} - hospedado em ${processo.ic} - virtualizado por AWS0001 - criticidade: ${processo.criticidade}`,
+      category:"software",
+      work_notes: `Data de parada: ${date}`
+  }
+
+  try {
+      const response = await axios.post(`https://4matttecnologiadainformacaoltdademo3.service-now.com/api/now/table/incident`,data,config);
+      console.log(response.data.result);
+  } catch (error) {
+      console.log(error);
+      
+  }
+} 
+
 
 app.listen(3001);
