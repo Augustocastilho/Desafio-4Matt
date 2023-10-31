@@ -73,18 +73,17 @@ app.patch('/alterarStatus', (req, res) => {
 
   const processo = 'SELECT * FROM processo WHERE id = ?';
   executeQuery(processo, [id])
-    .then((results) => {
+    .then(async (results) => {
       const status = unconvertStatus(results[0].status);
       const novoStatus = !status;
-
       const sql = 'UPDATE processo SET status = ? WHERE id = ?';
+
+      if (!novoStatus) {
+        await servicenow(results[0]);
+      }
 
       executeQuery(sql, [novoStatus, id])
         .then(() => {
-          if (!novoStatus) {
-            console.log(novoStatus);
-            servicenow(processo);
-          }
           res.json({ message: 'Status alterado com sucesso!' });
         })
         .catch(() => {
@@ -106,7 +105,7 @@ async function servicenow (processo) {
         'Content-Type': 'application/json'
       }
   };
-
+  
   const callerId = "31dedd3a1b42f1d034255311604bcb70";
 
   const data = { 
